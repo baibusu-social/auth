@@ -1,24 +1,40 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   auth-forwarder:
     build: .
     ports:
       - '3000:3000'
+    depends_on:
+      - redis
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=${PORT}
+      # Redis connection
+      - REDIS_URL=redis://redis:6379
       # Override these in production with your actual values
-      - BASE_URL=https://auth.yourdomain.com
+      - BASE_URL=${BASE_URL}
       - SESSION_SECRET=${SESSION_SECRET}
       - LOGTO_ENDPOINT=${LOGTO_ENDPOINT}
       - LOGTO_APP_ID=${LOGTO_APP_ID}
       - LOGTO_APP_SECRET=${LOGTO_APP_SECRET}
-      - LOGTO_SCOPES=openid,profile,email
+      - LOGTO_SCOPES=${LOGTO_SCOPES}
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
-      - DISCORD_REDIRECT_URI=https://auth.yourdomain.com/discord/callback
+      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI}
     restart: unless-stopped
     healthcheck:
       test:
@@ -37,3 +53,7 @@ services:
     # Uncomment if you want to use an external env file
     # env_file:
     #   - .env.production
+
+volumes:
+  redis_data:
+    driver: local
