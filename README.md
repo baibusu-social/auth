@@ -136,6 +136,121 @@ Start the production server:
 pnpm start
 ```
 
+## Docker Deployment
+
+### Building the Docker Image
+
+```bash
+# Build the image
+docker build -t auth-forwarder .
+
+# Or build with a specific tag
+docker build -t baibusu/auth-forwarder:latest .
+```
+
+### Running with Docker
+
+#### Option 1: Docker Run (with environment variables)
+
+```bash
+docker run -d \
+  --name auth-forwarder \
+  -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e BASE_URL=https://auth.baibusu.social \
+  -e SESSION_SECRET=your-production-session-secret \
+  -e LOGTO_ENDPOINT=https://auth.baibusu.social \
+  -e LOGTO_APP_ID=your-app-id \
+  -e LOGTO_APP_SECRET=your-app-secret \
+  -e LOGTO_SCOPES=openid,profile,email \
+  -e DISCORD_CLIENT_ID=your-discord-client-id \
+  -e DISCORD_CLIENT_SECRET=your-discord-client-secret \
+  -e DISCORD_GUILD_ID=your-guild-id \
+  -e DISCORD_REDIRECT_URI=https://auth.baibusu.social/discord/callback \
+  auth-forwarder
+```
+
+#### Option 2: Docker Compose (Recommended)
+
+1. **Create production environment file:**
+
+   ```bash
+   wget https://raw.githubusercontent.com/baibusu-social/auth/master/.env.production.example -O .env.production
+   wget https://raw.githubusercontent.com/baibusu-social/auth/master/docker-compose.yml
+   ```
+
+2. **Edit `.env.production` with your actual values:**
+
+   ```bash
+   # Update all the placeholder values with your real configuration
+   nano .env.production
+   ```
+
+3. **Update docker-compose.yml environment section if needed**
+
+4. **Run with Docker Compose:**
+
+   ```bash
+   # Start the service
+   docker compose up -d
+
+   # View logs
+   docker compose logs -f
+
+   # Stop the service
+   docker compose down
+   ```
+
+### Docker Environment Configuration
+
+When deploying with Docker, ensure you update these key environment variables:
+
+| Variable               | Development                              | Production                                     |
+| ---------------------- | ---------------------------------------- | ---------------------------------------------- |
+| `BASE_URL`             | `http://localhost:3000`                  | `https://auth.baibusu.social`                  |
+| `DISCORD_REDIRECT_URI` | `http://localhost:3000/discord/callback` | `https://auth.baibusu.social/discord/callback` |
+| `SESSION_SECRET`       | Any string                               | Strong, randomly generated secret              |
+| `NODE_ENV`             | `development`                            | `production`                                   |
+
+### Important: External Service Configuration
+
+When deploying to production, you must also update:
+
+#### Logto Application Settings:
+
+- **Redirect URI**: Change from `http://localhost:3000/logto/sign-in-callback` to `https://auth.baibusu.social/logto/sign-in-callback`
+- **Post-logout URI**: Change from `http://localhost:3000/` to `https://auth.baibusu.social/`
+- **CORS origins**: Add `https://auth.baibusu.social`
+
+#### Discord Application Settings:
+
+- **OAuth Redirect URI**: Change from `http://localhost:3000/discord/callback` to `https://auth.baibusu.social/discord/callback`
+
+### Health Checks
+
+The Docker container includes built-in health checks. You can verify the service is running:
+
+```bash
+# Check container health
+docker ps
+
+# Manual health check
+curl https://auth.baibusu.social/health
+```
+
+### Logs and Debugging
+
+```bash
+# View container logs
+docker logs auth-forwarder
+
+# Follow logs in real-time
+docker logs -f auth-forwarder
+
+# With docker-compose
+docker-compose logs -f auth-forwarder
+```
+
 ## Environment Variables
 
 | Variable                | Description                       | Default                 |
@@ -188,4 +303,4 @@ pnpm start
 
 ## License
 
-ISC
+MIT
