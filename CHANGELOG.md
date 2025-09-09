@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/baibusu-social/auth/compare/v1.0.1...v1.0.2) (2025-09-09)
+
+
+### Bug Fixes
+
+* :bug: Fixed auth/verify route ([01c7712](https://github.com/baibusu-social/auth/commit/01c7712f9176a4170588c08c031639fce36f9230))
+
 ## [1.0.1](https://github.com/baibusu-social/auth/compare/v1.0.0...v1.0.1) (2025-09-09)
 
 
