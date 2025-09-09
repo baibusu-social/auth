@@ -132,6 +132,18 @@ async function startApp() {
   // Logto auth routes
   app.use(handleAuthRoutes(config))
 
+  // Middleware to handle return URL after successful authentication
+  app.use((req, res, next) => {
+    // Check if user just authenticated and has a return URL
+    if (req.user && req.session.returnTo && req.path === '/') {
+      const returnTo = req.session.returnTo
+      delete req.session.returnTo
+      console.log(`User authenticated, redirecting to: ${returnTo}`)
+      return res.redirect(returnTo)
+    }
+    next()
+  })
+
   // Middleware to check authentication for forward auth
   const requireAuth = withLogto(config, {
     getAccessToken: false,
@@ -258,39 +270,72 @@ async function startApp() {
   })
 
   // Forward auth endpoint that only returns status (for Caddy forward_auth)
-  app.get(
-    '/auth/verify',
-    requireAuth,
-    requireDiscordGuildMembership,
-    (req, res) => {
-      const user = req.user
-      const discordMember = req.discordMember
+  app.get('/auth/verify', (req, res, next) => {
+    // Check if user is authenticated
+    if (!req.user) {
+      // Get the original URL from Caddy headers
+      const originalUrl =
+        req.get('X-Forwarded-Uri') || req.get('X-Original-URL') || '/'
+      const originalHost = req.get('X-Forwarded-Host') || req.get('Host')
+      const protocol = req.get('X-Forwarded-Proto') || 'https'
 
-      if (!user) {
-        return res.status(401).end()
-      }
+      // Build the return URL
+      const returnTo = `${protocol}://${originalHost}${originalUrl}`
 
-      // Set headers for Caddy to forward
-      res.set({
-        'X-Auth-User': user.sub || user.id,
-        'X-Auth-Name': user.name || '',
-        'X-Auth-Email': user.email || '',
-        'X-Auth-Groups': user.groups ? user.groups.join(',') : '',
-        'X-Auth-Roles': user.roles ? user.roles.join(',') : '',
-        'X-Discord-User': discordMember?.user?.id || '',
-        'X-Discord-Username': discordMember?.user?.username || '',
-        'X-Discord-Roles': discordMember?.roles
-          ? discordMember.roles.join(',')
-          : '',
-      })
+      // Redirect to sign-in with return URL
+      const signInUrl = `${
+        config.baseUrl
+      }/sign-in?returnTo=${encodeURIComponent(returnTo)}`
 
-      // Return 200 OK for successful authentication
-      res.status(200).end()
+      console.log(`Auth verify failed, redirecting to: ${signInUrl}`)
+      console.log(`Return URL will be: ${returnTo}`)
+
+      return res.status(401).set('Location', signInUrl).end()
     }
-  )
+
+    // Continue with auth and Discord checks
+    requireAuth(req, res, (err) => {
+      if (err) return next(err)
+
+      requireDiscordGuildMembership(req, res, (err) => {
+        if (err) return next(err)
+
+        const user = req.user
+        const discordMember = req.discordMember
+
+        // Set headers for Caddy to forward
+        res.set({
+          'X-Auth-User': user.sub || user.id,
+          'X-Auth-Name': user.name || '',
+          'X-Auth-Email': user.email || '',
+          'X-Auth-Groups': user.groups ? user.groups.join(',') : '',
+          'X-Auth-Roles': user.roles ? user.roles.join(',') : '',
+          'X-Discord-User': discordMember?.user?.id || '',
+          'X-Discord-Username': discordMember?.user?.username || '',
+          'X-Discord-Roles': discordMember?.roles
+            ? discordMember.roles.join(',')
+            : '',
+        })
+
+        // Return 200 OK for successful authentication
+        res.status(200).end()
+      })
+    })
+  })
 
   // Login route (redirect to Logto)
   app.get('/login', (req, res) => {
+    res.redirect('/logto/sign-in')
+  })
+
+  // Sign-in route with return URL support (for Caddy forward_auth)
+  app.get('/sign-in', (req, res) => {
+    const returnTo = req.query.returnTo
+    if (returnTo) {
+      // Store the return URL in session for after authentication
+      req.session.returnTo = returnTo
+      console.log(`Storing return URL in session: ${returnTo}`)
+    }
     res.redirect('/logto/sign-in')
   })
 

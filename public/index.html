@@ -151,15 +151,15 @@
         body {
           padding: 20px;
         }
-        
+
         h1 {
           font-size: 2rem;
         }
-        
+
         .button-group {
           flex-direction: column;
         }
-        
+
         .button {
           text-align: center;
         }
@@ -172,7 +172,9 @@
     <div class="test-section">
       <h2>🩺 Health & Diagnostics</h2>
       <div class="button-group">
-        <button onclick="testEndpoint('/health')" class="button">Health Check</button>
+        <button onclick="testEndpoint('/health')" class="button">
+          Health Check
+        </button>
         <button onclick="testEndpoint('/auth')" class="button">
           Test Auth Endpoint
         </button>
@@ -190,13 +192,18 @@
       <div class="button-group">
         <a href="/login" class="button">Login (Logto)</a>
         <a href="/logout" class="button">Logout</a>
-        <button onclick="testEndpoint('/profile')" class="button">View Profile</button>
+        <button onclick="testEndpoint('/profile')" class="button">
+          View Profile
+        </button>
       </div>
     </div>
 
     <div class="clear-section">
       <h3>⚠️ Session Management</h3>
-      <p>Use this if you encounter session issues or need to reset authentication state:</p>
+      <p>
+        Use this if you encounter session issues or need to reset authentication
+        state:
+      </p>
       <button onclick="clearSession()" class="button danger">
         Clear All Sessions & Cookies
       </button>
@@ -262,12 +269,17 @@
 
           if (response.ok) {
             const result = await response.json()
-            responseDiv.textContent = `✅ ${result.message}\n\n${JSON.stringify(result, null, 2)}`
+            responseDiv.textContent = `✅ ${result.message}\n\n${JSON.stringify(
+              result,
+              null,
+              2
+            )}`
             responseDiv.className = 'response success'
-            
+
             // Show a brief success message
             setTimeout(() => {
-              responseDiv.textContent = '🧹 Sessions cleared! You can now test authentication flow from scratch.'
+              responseDiv.textContent =
+                '🧹 Sessions cleared! You can now test authentication flow from scratch.'
               responseDiv.className = 'response success'
             }, 2000)
           } else {
