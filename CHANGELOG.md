@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/baibusu-social/auth/compare/v1.0.0...v1.0.1) (2025-09-09)
+
+
+### Bug Fixes
+
+* :bug: Fixed Session Storage ([6e7fa99](https://github.com/baibusu-social/auth/commit/6e7fa990c38b7987851344deec5800787cb55874))
+
 # 1.0.0 (2025-09-09)
 
 
